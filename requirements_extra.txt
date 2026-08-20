@@ -1,0 +1,28 @@
+fastapi
+uvicorn
+python-dotenv
+requests
+pydantic
+python-docx
+docx2pdf; sys_platform == 'win32'
+selenium
+webdriver-manager
+pywinauto; sys_platform == 'win32'
+pyautogui
+pyperclip
+pygetwindow; sys_platform == 'win32'
+PySide6
+openai
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+pypdf
+fpdf
+openai-whisper
+sounddevice
+pyttsx3
+sentence-transformers
+faiss-cpu
+scikit-learn
+datasets
+trl

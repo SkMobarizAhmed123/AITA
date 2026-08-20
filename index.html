@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="description"
+    content="AITA AI is a privacy-first, local-first AI assistant and workstation featuring custom LLM training, desktop automation, and multi-provider browser AI integration." />
+  <meta name="theme-color" content="#07090e" />
+  <title>AITA AI — Autonomous Local AI Assistant & Workstation</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <link rel="icon" type="image/x-icon" href="/ekaur.ico">
+  <script src="/marked.min.js"></script>
+  <link rel="stylesheet" href="/github-dark-dimmed.min.css">
+  <script src="/highlight.min.js"></script>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    /* ── Action Buttons ── */
+    .msg-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      opacity: 0.5;
+      transition: opacity 0.2s ease;
+    }
+
+    .message-row:hover .msg-actions {
+      opacity: 1;
+    }
+
+    .msg-action-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 6px;
+      font-size: 16px;
+      line-height: 1;
+      transition: background 0.2s, opacity 0.2s, transform 0.1s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .msg-action-btn img {
+      width: 22px;
+      height: 22px;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+      opacity: 0.85;
+      transition: filter 0.2s, opacity 0.2s, transform 0.15s ease;
+    }
+
+    .msg-action-btn:hover img {
+      filter: brightness(0) invert(1) drop-shadow(0 0 6px rgba(255, 255, 255, 0.8));
+      opacity: 1;
+      transform: scale(1.18);
+    }
+
+    .msg-action-btn:active img {
+      transform: scale(0.92);
+    }
+
+    .msg-action-btn.liked img {
+      filter: brightness(0) invert(1) drop-shadow(0 0 8px #3b82f6) sepia(1) saturate(10000%) hue-rotate(190deg);
+      opacity: 1;
+    }
+
+    .msg-action-btn.disliked img {
+      filter: brightness(0) invert(1) drop-shadow(0 0 8px #ef4444) sepia(1) saturate(10000%) hue-rotate(320deg);
+      opacity: 1;
+    }
+
+    .msg-action-btn[disabled] {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+
+    /* ── Research Popup (Pink Glow) ── */
+    #research-popup {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      z-index: 99998;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(20, 10, 18, 0.96);
+      border: 1px solid rgba(236, 72, 153, 0.25);
+      border-radius: 24px;
+      padding: 28px 24px;
+      box-shadow:
+        0 0 40px rgba(236, 72, 153, 0.25),
+        0 0 80px rgba(236, 72, 153, 0.1),
+        0 20px 50px rgba(0, 0, 0, 0.5),
+        inset 0 0 60px rgba(236, 72, 153, 0.03);
+      backdrop-filter: blur(16px);
+      transition: opacity 0.4s ease, visibility 0.4s ease, transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+      transform: translateY(20px) scale(0.95);
+      min-width: 260px;
+    }
+
+    #research-popup.active-popup {
+      transform: translateY(0) scale(1);
+    }
+
+    .research-popup-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #research-popup .splash-logo-container {
+      width: 120px;
+      height: 120px;
+      border-radius: 22px;
+      animation: research-pulse 2.5s ease-in-out infinite;
+      border: 1px solid rgba(236, 72, 153, 0.3);
+      box-shadow: 0 0 30px rgba(236, 72, 153, 0.3), 0 10px 30px rgba(0,0,0,0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #research-popup .splash-logo-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: saturate(1.2) brightness(0.9);
+    }
+
+    #research-popup .splash-logo-container::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 22px;
+      background: radial-gradient(circle at center, rgba(236, 72, 153, 0.25) 0%, rgba(219, 39, 119, 0.1) 60%, transparent 100%);
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    @keyframes research-pulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(236, 72, 153, 0.3); }
+      50% { transform: scale(1.03); box-shadow: 0 0 50px rgba(236, 72, 153, 0.5); }
+    }
+
+    #research-popup .splash-title {
+      font-size: 18px;
+      margin-top: 14px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      background: linear-gradient(135deg, #f9a8d4, #ec4899, #db2777);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    #research-popup .splash-subtitle {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 10px;
+      margin-top: 3px;
+      color: rgba(249, 168, 212, 0.5);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    #research-popup .splash-progress {
+      width: 200px;
+      margin-top: 16px;
+      height: 6px;
+      border-radius: 6px;
+      background: rgba(236, 72, 153, 0.08);
+      position: relative;
+      overflow: hidden;
+    }
+
+    #research-popup .splash-progress-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 0%;
+      border-radius: 6px;
+      background: linear-gradient(90deg, #ec4899, #f472b6, #f9a8d4);
+      box-shadow: 0 0 12px rgba(236, 72, 153, 0.7);
+    }
+
+    /* Ticker list */
+    .research-ticker {
+      width: 100%;
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .research-ticker-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 11.5px;
+      color: rgba(255, 255, 255, 0.4);
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: all 0.4s ease;
+    }
+
+    .research-ticker-item.completed {
+      color: rgba(249, 168, 212, 0.9);
+      background: rgba(236, 72, 153, 0.08);
+      border-color: rgba(236, 72, 153, 0.15);
+      box-shadow: 0 0 10px rgba(236, 72, 153, 0.05);
+    }
+
+    .research-ticker-item .ticker-icon {
+      font-size: 13px;
+      flex-shrink: 0;
+      width: 18px;
+      text-align: center;
+    }
+
+    .research-ticker-item .ticker-name {
+      flex: 1;
+      font-weight: 600;
+    }
+
+    .research-ticker-item .ticker-meta {
+      font-size: 10px;
+      opacity: 0.6;
+      white-space: nowrap;
+    }
+
+    @keyframes ticker-pop {
+      0% { transform: scale(0.95); opacity: 0.5; }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .research-ticker-item.just-completed {
+      animation: ticker-pop 0.4s ease;
+    }
+
+    #research-popup.fade-out {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(20px) scale(0.95);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- 🔲 Research Popup -->
+  <div id="research-popup" style="display: none;">
+    <div class="research-popup-content">
+      <div class="splash-logo-container">
+        <video autoplay loop muted playsinline>
+          <source src="/extra%20glow%20loading.mp4" type="video/mp4">
+          <source src="/loadingscreen.webm" type="video/webm">
+        </video>
+      </div>
+      <div class="splash-title">Multi-AI Research</div>
+      <div class="splash-subtitle">QUERYING 3 AI MODELS</div>
+      <div class="splash-progress">
+        <div class="splash-progress-bar" id="research-bar"></div>
+      </div>
+      <div class="research-ticker" id="research-ticker">
+        <div class="research-ticker-item" data-model="Gemini (2.5 Pro)"><span class="ticker-icon">⏳</span><span class="ticker-name">Gemini</span><span class="ticker-meta">waiting...</span></div>
+        <div class="research-ticker-item" data-model="ChatGPT (GPT-4o mini)"><span class="ticker-icon">⏳</span><span class="ticker-name">ChatGPT</span><span class="ticker-meta">waiting...</span></div>
+        <div class="research-ticker-item" data-model="DeepSeek (DeepSeek-V3)"><span class="ticker-icon">⏳</span><span class="ticker-name">DeepSeek</span><span class="ticker-meta">waiting...</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ambient-blur-1"></div>
+  <div class="ambient-blur-2"></div>
+
+  <div id="app-container">
+
+    <!-- Sidebar -->
+    <sidebar id="sidebar">
+      <div class="brand-header">
+        <div class="brand-icon" style="overflow: hidden; padding: 0;">
+          <img src="/logo.png" alt="AITA Logo"
+            style="width: 100%; height: 100%; object-fit: cover; border-radius: 12px;">
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">AITA</span>
+        </div>
+      </div>
+
+      <button class="btn-new-chat" onclick="startNewChat()">
+        <svg viewBox="0 0 24 24">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        New Session
+      </button>
+
+      <div class="sidebar-section-title">Recent Chats</div>
+
+      <div class="history-list" id="history-list">
+        <div class="history-item active">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          Current Workspace Chat
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="engine-status-card">
+          <div class="status-dot" id="status-dot"></div>
+          <div class="engine-info">
+            <span class="engine-name" id="engine-status-text">Ollama Engine</span>
+            <span class="engine-sub" id="engine-sub-text">Connected</span>
+          </div>
+        </div>
+      </div>
+    </sidebar>
+
+    <!-- Main Workspace -->
+    <main>
+      <!-- Header -->
+      <header>
+        <div class="header-left">
+          <button class="btn-icon" onclick="toggleSidebar()" title="Toggle Sidebar">
+            <svg viewBox="0 0 24 24" fill="none">
+              <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" />
+              <path d="M9 3v18" stroke="currentColor" />
+            </svg>
+          </button>
+          <span class="header-chat-title">Local Research & Automation</span>
+        </div>
+
+        <div class="header-right">
+          <select class="theme-select-dropdown" id="theme-selector" onchange="changeTheme(this.value)"
+            title="Switch Premium Theme">
+            <option value="dark">🌑 Midnight Neon</option>
+            <option value="orange-black">🟧 Amber Cyberpunk</option>
+            <option value="light">☀️ Nordic Frost</option>
+            <option value="emerald">🌲 Emerald Obsidian</option>
+            <option value="purple">🔮 Royal Amethyst</option>
+          </select>
+          <button class="btn-icon" onclick="clearMessages()" title="Clear Chat">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            </svg>
+          </button>
+        </div>
+
+        <div id="progress-bar-container">
+          <div id="progress-bar"></div>
+        </div>
+      </header>
+
+      <!-- Scroll Area -->
+      <div id="chat-scroll-area">
+        <div class="chat-inner-content" id="chat-box">
+
+          <!-- Welcome Screen -->
+          <div id="welcome-screen">
+            <div class="welcome-hero-icon"
+              style="overflow: hidden; padding: 0; width: 180px; height: 180px; border-radius: 28px; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 12px 40px rgba(99, 102, 241, 0.25);">
+              <video autoplay loop muted playsinline
+                style="width: 100%; height: 100%; object-fit: cover; border-radius: 28px;">
+                <source src="/extra%20glow%20loading.mp4" type="video/mp4">
+                <source src="/loadingscreen.webm" type="video/webm">
+              </video>
+            </div>
+            <h1 class="welcome-title">What would you like to solve with AITA?</h1>
+            <p class="welcome-subtitle">Ask questions from indexed research PDFs, write python automation scripts, or
+              query desktop tools.</p>
+
+            <div class="prompt-suggestions-grid">
+              <div class="prompt-card" onclick="usePrompt('Search my indexed PDF library for recent findings')">
+                <span class="prompt-card-icon">📄</span>
+                <span class="prompt-card-title">Search Research PDFs</span>
+                <span class="prompt-card-desc">Query indexed documents & cite sources</span>
+              </div>
+              <div class="prompt-card" onclick="usePrompt('Make a txt file named notes.txt with content Hello World')">
+                <span class="prompt-card-icon">⚡</span>
+                <span class="prompt-card-title">Create Text File</span>
+                <span class="prompt-card-desc">Execute desktop file commands</span>
+              </div>
+              <div class="prompt-card" onclick="usePrompt('Explain how transformers work in AI simply')">
+                <span class="prompt-card-icon">💡</span>
+                <span class="prompt-card-title">Explain AI Concepts</span>
+                <span class="prompt-card-desc">Get clear technical explanations</span>
+              </div>
+              <div class="prompt-card" onclick="usePrompt('create project FastAPI backend app named demo_service')">
+                <span class="prompt-card-icon">🚀</span>
+                <span class="prompt-card-title">Generate Full Project</span>
+                <span class="prompt-card-desc">Build complete multi-file app specs</span>
+              </div>
+              <div class="prompt-card" onclick="usePrompt('index repo C:\\Varic')">
+                <span class="prompt-card-icon">🔍</span>
+                <span class="prompt-card-title">Chat with Repository</span>
+                <span class="prompt-card-desc">Index & search codebase AST chunks</span>
+              </div>
+              <div class="prompt-card" onclick="usePrompt('scan \&quot;C:\\Temp\\suspicious.exe\&quot; for virus')">
+                <span class="prompt-card-icon">🛡️</span>
+                <span class="prompt-card-title">Virus & Malware Scan</span>
+                <span class="prompt-card-desc">Scan, quarantine, or delete suspicious files</span>
+              </div>
+              <div class="prompt-card" onclick="usePrompt('python docs: asyncio')">
+                <span class="prompt-card-icon">📖</span>
+                <span class="prompt-card-title">Python Docs (ZIM)</span>
+                <span class="prompt-card-desc">Offline search docs.python.org archive</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Input Bar Container -->
+      <div id="input-dock">
+        <div id="command-suggestions"></div>
+        <div class="input-glass-container">
+
+          <div class="input-row">
+            <textarea id="user-input" placeholder="Ask AITA anything..." rows="1"></textarea>
+
+            <div class="input-actions">
+              <!-- 🎤 Voice Input Button -->
+              <button id="btn-mic" class="btn-action-circle" onclick="toggleRecording()"
+                title="Voice input (Click to speak)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
+              </button>
+
+              <!-- ⏹️ Stop Recording Button -->
+              <button id="btn-stop-mic" class="btn-action-circle" onclick="stopRecording()" title="Stop & Transcribe"
+                style="display: none; color: #ef4444;">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="6" width="12" height="12" rx="2" ry="2"></rect>
+                </svg>
+              </button>
+
+              <!-- Send Button -->
+              <button id="btn-send" class="btn-action-circle" onclick="sendMessage()" title="Send Message (Enter)">
+                <svg viewBox="0 0 24 24">
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Recording Status Bar -->
+          <div id="recording-bar" style="display: none; align-items: center; gap: 10px; padding: 0 4px 6px 4px;">
+            <span class="rec-pulse-dot"></span>
+            <span id="rec-status-label" style="color: #ef4444; font-weight: 600; font-size: 13px;">Listening...</span>
+            <span style="color: var(--text-muted); font-size: 12px;" id="recording-hint">Speak clearly</span>
+          </div>
+
+          <div class="input-footer-hint">
+            <span>Press <strong>Enter</strong> to send &nbsp;·&nbsp; <strong>Shift+Enter</strong> for newline</span>
+            <span id="thinking-status"></span>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+    let isScrollScheduled = false;
+    const BACKEND = (window.location.origin && window.location.origin.startsWith("http"))
+      ? window.location.origin
+      : "http://127.0.0.1:8000";
+    const chatBox = document.getElementById("chat-box");
+    const scrollArea = document.getElementById("chat-scroll-area");
+    const input = document.getElementById("user-input");
+    const sendBtn = document.getElementById("btn-send");
+    const welcomeScreen = document.getElementById("welcome-screen");
+    const progressBarContainer = document.getElementById("progress-bar-container");
+    const progressBar = document.getElementById("progress-bar");
+    const thinkingStatus = document.getElementById("thinking-status");
+    const statusDot = document.getElementById("status-dot");
+    const engineStatusText = document.getElementById("engine-status-text");
+
+    if (typeof marked !== "undefined" && marked.setOptions) {
+      marked.setOptions({ breaks: true });
+    }
+
+    const COMMAND_LIST = [
+      { cmd: "/aires/", desc: "Sam's Multi-AI Research (APIs Only)" },
+      { cmd: "/checkres/", desc: "Mobariz's Fact-Checked Research (News + Wiki + Papers)" },
+      { cmd: "/combres/", desc: "Combined Composite Research (Multi-AI + Web Context)" },
+      { cmd: "/ask", desc: "Query a specific browser AI model" }
+    ];
+
+    let selectedSuggestionIndex = -1;
+
+    function renderSuggestions(matches) {
+      const popup = document.getElementById("command-suggestions");
+      if (!popup) return;
+      if (matches.length === 0) {
+        popup.style.display = "none";
+        popup.innerHTML = "";
+        selectedSuggestionIndex = -1;
+        return;
+      }
+
+      popup.innerHTML = matches.map((m, index) => `
+        <div class="suggestion-item ${index === selectedSuggestionIndex ? 'selected' : ''}" onclick="applySuggestion('${m.cmd}')">
+          <span class="suggestion-cmd">${m.cmd}</span>
+          <span class="suggestion-desc">${m.desc}</span>
+        </div>
+      `).join('');
+      popup.style.display = "block";
+    }
+
+    function applySuggestion(cmd) {
+      input.value = cmd + " ";
+      input.focus();
+      const popup = document.getElementById("command-suggestions");
+      if (popup) popup.style.display = "none";
+      selectedSuggestionIndex = -1;
+      input.dispatchEvent(new Event('input'));
+    }
+
+    function updateSelectedSuggestion(items) {
+      items.forEach((item, idx) => {
+        if (idx === selectedSuggestionIndex) {
+          item.classList.add("selected");
+          item.scrollIntoView({ block: "nearest" });
+        } else {
+          item.classList.remove("selected");
+        }
+      });
+    }
+
+    input.addEventListener("input", () => {
+      input.style.height = "auto";
+      input.style.height = Math.min(input.scrollHeight, 160) + "px";
+
+      const val = input.value;
+      if (val.startsWith("/")) {
+        const matches = COMMAND_LIST.filter(c => c.cmd.toLowerCase().includes(val.toLowerCase()) || val === "/");
+        selectedSuggestionIndex = matches.length > 0 ? 0 : -1;
+        renderSuggestions(matches);
+      } else {
+        const popup = document.getElementById("command-suggestions");
+        if (popup) popup.style.display = "none";
+        selectedSuggestionIndex = -1;
+      }
+    });
+
+    input.addEventListener("keydown", (e) => {
+      const popup = document.getElementById("command-suggestions");
+      const isVisible = popup && popup.style.display === "block";
+
+      if (isVisible) {
+        const items = popup.querySelectorAll(".suggestion-item");
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          selectedSuggestionIndex = (selectedSuggestionIndex + 1) % items.length;
+          updateSelectedSuggestion(items);
+          return;
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          selectedSuggestionIndex = (selectedSuggestionIndex - 1 + items.length) % items.length;
+          updateSelectedSuggestion(items);
+          return;
+        } else if (e.key === "Tab" || (e.key === "Enter" && selectedSuggestionIndex >= 0)) {
+          e.preventDefault();
+          const selected = items[selectedSuggestionIndex];
+          if (selected) {
+            const cmd = selected.querySelector(".suggestion-cmd").textContent;
+            applySuggestion(cmd);
+          }
+          return;
+        } else if (e.key === "Escape") {
+          popup.style.display = "none";
+          return;
+        }
+      }
+
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      const dock = document.getElementById("input-dock");
+      if (dock && !dock.contains(e.target)) {
+        const popup = document.getElementById("command-suggestions");
+        if (popup) popup.style.display = "none";
+      }
+    });
+
+    function toggleSidebar() {
+      document.getElementById("sidebar").classList.toggle("collapsed");
+    }
+
+    function showToast(msg, isError = false) {
+      const container = document.getElementById("toast-container");
+      const toast = document.createElement("div");
+      toast.className = `toast ${isError ? 'error' : ''}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function usePrompt(text) {
+      input.value = text;
+      input.focus();
+      input.dispatchEvent(new Event('input'));
+    }
+
+    function startNewChat() {
+      clearMessages();
+    }
+
+    function clearMessages() {
+      chatBox.innerHTML = '';
+      if (welcomeScreen) {
+        chatBox.appendChild(welcomeScreen);
+      }
+    }
+
+    function scrollToBottom(force = false) {
+      if (isScrollScheduled) return;
+      isScrollScheduled = true;
+      requestAnimationFrame(() => {
+        isScrollScheduled = false;
+        const distanceToBottom = scrollArea.scrollHeight - scrollArea.scrollTop - scrollArea.clientHeight;
+        if (force || distanceToBottom < 120) {
+          scrollArea.scrollTop = scrollArea.scrollHeight;
+        }
+      });
+    }
+
+    function createAIRow(prompt) {
+      if (document.getElementById("welcome-screen")) {
+        document.getElementById("welcome-screen").remove();
+      }
+
+      const row = document.createElement("div");
+      row.className = "message-row ai";
+      row.dataset.prompt = prompt || '';
+
+      const avatar = document.createElement("div");
+      avatar.className = "msg-avatar";
+      avatar.innerHTML = `<img src="/logo.png" alt="AITA" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">`;
+
+      const body = document.createElement("div");
+      body.className = "msg-body";
+
+      const bubble = document.createElement("div");
+      bubble.className = "msg-bubble";
+
+      body.appendChild(bubble);
+      row.appendChild(avatar);
+      row.appendChild(body);
+      chatBox.appendChild(row);
+      scrollToBottom(true);
+      return row;
+    }
+
+    function addMessageActions(row, prompt, fullText) {
+      const body = row.querySelector('.msg-body');
+      if (!body) return;
+      if (body.querySelector('.msg-actions')) return;
+
+      const actionsDiv = document.createElement('div');
+      actionsDiv.className = 'msg-actions';
+
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'msg-action-btn';
+      copyBtn.title = 'Copy';
+      copyBtn.innerHTML = '<img src="/actions/copy.png" alt="Copy">';
+      copyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const bubble = row.querySelector('.msg-bubble');
+        const text = bubble ? bubble.innerText : fullText;
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('📋 Copied to clipboard');
+        }).catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+          showToast('📋 Copied');
+        });
+      });
+      actionsDiv.appendChild(copyBtn);
+
+      const regenBtn = document.createElement('button');
+      regenBtn.className = 'msg-action-btn';
+      regenBtn.title = 'Regenerate';
+      regenBtn.innerHTML = '<img src="/actions/regenerate.png" alt="Regenerate">';
+      regenBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (regenBtn.disabled) return;
+        const prompt = row.dataset.prompt;
+        if (!prompt) return;
+        row.remove();
+        sendMessage({ prompt: prompt, skipUserAppend: true });
+      });
+      actionsDiv.appendChild(regenBtn);
+
+      const likeBtn = document.createElement('button');
+      likeBtn.className = 'msg-action-btn';
+      likeBtn.title = 'Like';
+      likeBtn.innerHTML = '<img src="/actions/like.png" alt="Like">';
+      likeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const liked = row.dataset.liked === 'true';
+        if (liked) {
+          row.dataset.liked = 'false';
+          likeBtn.classList.remove('liked');
+        } else {
+          row.dataset.liked = 'true';
+          likeBtn.classList.add('liked');
+          if (row.dataset.disliked === 'true') {
+            row.dataset.disliked = 'false';
+            const dislikeBtn = actionsDiv.querySelector('.msg-action-btn.disliked');
+            if (dislikeBtn) dislikeBtn.classList.remove('disliked');
+          }
+        }
+      });
+      actionsDiv.appendChild(likeBtn);
+
+      const dislikeBtn = document.createElement('button');
+      dislikeBtn.className = 'msg-action-btn';
+      dislikeBtn.title = 'Dislike';
+      dislikeBtn.innerHTML = '<img src="/actions/dislike.png" alt="Dislike">';
+      dislikeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const disliked = row.dataset.disliked === 'true';
+        if (disliked) {
+          row.dataset.disliked = 'false';
+          dislikeBtn.classList.remove('disliked');
+        } else {
+          row.dataset.disliked = 'true';
+          dislikeBtn.classList.add('disliked');
+          if (row.dataset.liked === 'true') {
+            row.dataset.liked = 'false';
+            const likeBtn = actionsDiv.querySelector('.msg-action-btn.liked');
+            if (likeBtn) likeBtn.classList.remove('liked');
+          }
+        }
+      });
+      actionsDiv.appendChild(dislikeBtn);
+
+      const shareBtn = document.createElement('button');
+      shareBtn.className = 'msg-action-btn';
+      shareBtn.title = 'Share';
+      shareBtn.innerHTML = '<img src="/actions/share.png" alt="Share">';
+      shareBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const bubble = row.querySelector('.msg-bubble');
+        const text = bubble ? bubble.innerText : fullText;
+        if (navigator.share) {
+          navigator.share({
+            title: 'AITA Assistant',
+            text: text,
+          }).catch(() => { });
+        } else {
+          navigator.clipboard.writeText(text).then(() => {
+            showToast('📤 Message copied, you can share it manually');
+          }).catch(() => {
+            showToast('Share not available', true);
+          });
+        }
+      });
+      actionsDiv.appendChild(shareBtn);
+
+      body.appendChild(actionsDiv);
+    }
+
+    function appendMessage(role, text = "", sources = [], prompt = "") {
+      if (document.getElementById("welcome-screen")) {
+        document.getElementById("welcome-screen").remove();
+      }
+
+      const row = document.createElement("div");
+      row.className = `message-row ${role}`;
+
+      const avatar = document.createElement("div");
+      avatar.className = "msg-avatar";
+      if (role === "user") {
+        avatar.textContent = "U";
+      } else {
+        avatar.innerHTML = `<img src="/logo.png" alt="AITA" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">`;
+        row.dataset.prompt = prompt || '';
+      }
+
+      const body = document.createElement("div");
+      body.className = "msg-body";
+
+      const bubble = document.createElement("div");
+      bubble.className = "msg-bubble";
+
+      if (role === "user") {
+        bubble.textContent = text;
+      } else {
+        renderMarkdownIntoBubble(bubble, text, true);
+      }
+
+      body.appendChild(bubble);
+
+      if (sources && sources.length > 0) {
+        const sourcesDiv = document.createElement("div");
+        sourcesDiv.className = "sources-container";
+        sources.forEach(s => {
+          const pill = document.createElement("span");
+          pill.className = "source-pill";
+          pill.textContent = "📄 " + s;
+          sourcesDiv.appendChild(pill);
+        });
+        body.appendChild(sourcesDiv);
+      }
+
+      row.appendChild(avatar);
+      row.appendChild(body);
+      chatBox.appendChild(row);
+
+      if (role === "ai" && prompt) {
+        addMessageActions(row, prompt, text);
+      }
+
+      scrollToBottom(true);
+      return row;
+    }
+
+    function renderMarkdownIntoBubble(bubble, text, isFinal = false) {
+      if (!text) {
+        bubble.innerHTML = '';
+        return;
+      }
+
+      bubble.innerHTML = marked.parse(text);
+
+      if (isFinal || text.includes("```")) {
+        bubble.querySelectorAll("pre").forEach(pre => {
+          if (pre.parentElement && pre.parentElement.classList.contains("code-block-wrapper")) return;
+
+          const codeEl = pre.querySelector("code");
+          const langClass = codeEl ? Array.from(codeEl.classList).find(c => c.startsWith("language-")) : "";
+          const lang = langClass ? langClass.replace("language-", "") : "code";
+
+          const wrapper = document.createElement("div");
+          wrapper.className = "code-block-wrapper";
+
+          const header = document.createElement("div");
+          header.className = "code-header";
+          header.innerHTML = `<span>${lang}</span><button class="btn-copy-code" onclick="copyCode(this)">Copy</button>`;
+
+          if (pre.parentNode) {
+            pre.parentNode.insertBefore(wrapper, pre);
+            wrapper.appendChild(header);
+            wrapper.appendChild(pre);
+          }
+        });
+
+        if (isFinal && typeof hljs !== 'undefined') {
+          bubble.querySelectorAll("pre code").forEach(block => {
+            try { hljs.highlightElement(block); } catch (e) { }
+          });
+        }
+      }
+    }
+
+    function copyCode(btn) {
+      const code = btn.closest(".code-block-wrapper").querySelector("pre code").innerText;
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = "Copied!";
+        setTimeout(() => btn.textContent = "Copy", 2000);
+      });
+    }
+
+    function updateResearchTicker(chunkContent) {
+      const successMatch = chunkContent.match(/✅\s*\*\*(.+?)\*\*\s*responded\s*\((\d+)\s*words?,\s*([\d.]+)s\)/);
+      if (successMatch) {
+        const modelName = successMatch[1];
+        const words = successMatch[2];
+        const secs = successMatch[3];
+        const item = document.querySelector(`.research-ticker-item[data-model="${modelName}"]`);
+        if (item) {
+          item.querySelector('.ticker-icon').textContent = '✅';
+          item.querySelector('.ticker-meta').textContent = `${words} words · ${secs}s`;
+          item.classList.add('completed', 'just-completed');
+          setTimeout(() => item.classList.remove('just-completed'), 500);
+        }
+        return;
+      }
+
+      const failMatch = chunkContent.match(/❌\s*\*\*(.+?)\*\*\s*failed/);
+      if (failMatch) {
+        const modelName = failMatch[1];
+        const item = document.querySelector(`.research-ticker-item[data-model="${modelName}"]`);
+        if (item) {
+          item.querySelector('.ticker-icon').textContent = '❌';
+          item.querySelector('.ticker-meta').textContent = 'failed';
+          item.classList.add('completed');
+        }
+      }
+    }
+
+    let currentTypingRow = null;
+    function showTypingIndicator() {
+      if (document.getElementById("welcome-screen")) {
+        document.getElementById("welcome-screen").remove();
+      }
+
+      const row = document.createElement("div");
+      row.className = "message-row ai";
+      row.id = "active-typing-row";
+
+      const avatar = document.createElement("div");
+      avatar.className = "msg-avatar";
+      avatar.innerHTML = `<img src="/logo.png" alt="AITA" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">`;
+
+      const body = document.createElement("div");
+      body.className = "msg-body";
+
+      const bubble = document.createElement("div");
+      bubble.className = "msg-bubble";
+      bubble.innerHTML = `<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+
+      body.appendChild(bubble);
+      row.appendChild(avatar);
+      row.appendChild(body);
+
+      chatBox.appendChild(row);
+      currentTypingRow = row;
+      scrollToBottom(true);
+    }
+
+    function removeTypingIndicator() {
+      if (currentTypingRow) {
+        currentTypingRow.remove();
+        currentTypingRow = null;
+      }
+      const el = document.getElementById("active-typing-row");
+      if (el) el.remove();
+    }
+
+    let progressTimer = null;
+    let progressStart = 0;
+    function startProgress() {
+      progressStart = performance.now();
+      progressBar.style.transform = 'scaleX(0)';
+      progressBarContainer.classList.add("active");
+      clearInterval(progressTimer);
+
+      progressTimer = setInterval(() => {
+        const elapsedMs = performance.now() - progressStart;
+        const pct = Math.min(elapsedMs / 15000, 0.95);
+        progressBar.style.transform = `scaleX(${pct.toFixed(3)})`;
+        thinkingStatus.textContent = `Thinking… ${(elapsedMs / 1000).toFixed(1)}s`;
+      }, 250);
+    }
+
+    function stopProgress() {
+      clearInterval(progressTimer);
+      progressBar.style.transform = 'scaleX(1)';
+      thinkingStatus.textContent = '';
+      setTimeout(() => {
+        progressBarContainer.classList.remove("active");
+        progressBar.style.transform = 'scaleX(0)';
+      }, 300);
+    }
+
+    let pendingRender = null;
+    let renderScheduled = false;
+
+    function scheduleStreamRender(bubble, text) {
+      pendingRender = { bubble, text };
+      if (renderScheduled) return;
+      renderScheduled = true;
+      requestAnimationFrame(() => {
+        renderScheduled = false;
+        if (!pendingRender) return;
+        const { bubble: b, text: t } = pendingRender;
+        pendingRender = null;
+        renderMarkdownIntoBubble(b, t, false);
+        scrollToBottom();
+      });
+    }
+
+    function flushStreamRender() {
+      pendingRender = null;
+      renderScheduled = false;
+    }
+
+    let isRegenerating = false;
+
+    async function sendMessage(options = {}) {
+      if (isRecording) stopRecording(true);
+      const { prompt: explicitPrompt, skipUserAppend = false } = options;
+      const text = explicitPrompt || input.value.trim();
+      if (!text || sendBtn.disabled) return;
+
+      if (text.toLowerCase().includes("/research")) {
+        const popup = document.getElementById('research-popup');
+        const bar = document.getElementById('research-bar');
+        if (popup && bar) {
+            document.querySelectorAll('.research-ticker-item').forEach(el => {
+              el.classList.remove('completed', 'just-completed');
+              el.querySelector('.ticker-icon').textContent = '⏳';
+              el.querySelector('.ticker-meta').textContent = 'waiting...';
+            });
+            popup.style.display = 'flex';
+            popup.offsetHeight;
+            popup.classList.remove('fade-out');
+            popup.classList.add('active-popup');
+            bar.style.transition = 'none';
+            bar.style.width = '0%';
+            setTimeout(() => {
+                bar.style.transition = 'width 300s linear';
+                bar.style.width = '100%';
+            }, 50);
+        }
+      }
+
+      if (!skipUserAppend) {
+        appendMessage("user", text);
+        input.value = "";
+        input.style.height = "auto";
+      }
+
+      sendBtn.disabled = true;
+      showTypingIndicator();
+      startProgress();
+
+      let streamBubble = null;
+      let fullText = "";
+      let aiRow = null;
+
+      try {
+        const res = await fetch(`${BACKEND}/chat/stream`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text })
+        });
+
+        if (res.status === 404) {
+          await fallbackPlainChat(text);
+          return;
+        }
+
+        if (!res.ok) {
+          throw new Error(`Server error ${res.status}`);
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let sources = [];
+        let firstChunk = true;
+        let buffer = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || "";
+
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            try {
+              const data = JSON.parse(line);
+              if (data.type === "chunk") {
+                if (firstChunk) {
+                  firstChunk = false;
+                  removeTypingIndicator();
+                  aiRow = createAIRow(text);
+                  streamBubble = aiRow.querySelector('.msg-bubble');
+                }
+                fullText += data.content;
+                updateResearchTicker(data.content);
+                scheduleStreamRender(streamBubble, fullText);
+              } else if (data.type === "done") {
+                if (data.sources) sources = data.sources;
+              }
+            } catch (e) {
+              console.error("Chunk JSON parse error:", e);
+            }
+          }
+        }
+
+        if (buffer.trim()) {
+          try {
+            const data = JSON.parse(buffer.trim());
+            if (data.type === "chunk") {
+              if (firstChunk) {
+                firstChunk = false;
+                removeTypingIndicator();
+                aiRow = createAIRow(text);
+                streamBubble = aiRow.querySelector('.msg-bubble');
+              }
+              fullText += data.content;
+            }
+          } catch (e) { }
+        }
+
+        if (firstChunk) {
+          removeTypingIndicator();
+          aiRow = appendMessage("ai", fullText, sources, text);
+        } else if (aiRow && streamBubble) {
+          flushStreamRender();
+          renderMarkdownIntoBubble(streamBubble, fullText, true);
+          addMessageActions(aiRow, text, fullText);
+          scrollToBottom(true);
+        }
+
+      } catch (err) {
+        removeTypingIndicator();
+        showToast(err.message, true);
+        appendMessage("ai", `⚠ Failure connecting to backend: ${err.message}`);
+      } finally {
+        stopProgress();
+        sendBtn.disabled = false;
+        input.focus();
+        isRegenerating = false;
+        
+        const popup = document.getElementById('research-popup');
+        if (popup) {
+            popup.classList.remove('active-popup');
+            popup.classList.add('fade-out');
+            setTimeout(() => {
+               popup.style.display = 'none';
+            }, 400);
+        }
+      }
+    }
+
+    async function fallbackPlainChat(text) {
+      try {
+        const res = await fetch(`${BACKEND}/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text })
+        });
+        removeTypingIndicator();
+        if (res.ok) {
+          const d = await res.json();
+          appendMessage("ai", d.reply, d.sources || [], text);
+        } else {
+          showToast(`Server error ${res.status}`, true);
+        }
+      } catch (e) {
+        removeTypingIndicator();
+        showToast(e.message, true);
+      }
+    }
+
+    function changeTheme(themeName) {
+      document.documentElement.setAttribute('data-theme', themeName);
+      localStorage.setItem('zaor_theme', themeName);
+      const select = document.getElementById('theme-selector');
+      if (select) select.value = themeName;
+    }
+
+    async function checkHealth() {
+      try {
+        const res = await fetch(`${BACKEND}/health`);
+        if (res.ok) {
+          statusDot.classList.remove("offline");
+          engineStatusText.textContent = "AITA Engine";
+        } else {
+          statusDot.classList.add("offline");
+          engineStatusText.textContent = "Connecting to Backend...";
+        }
+      } catch (e) {
+        statusDot.classList.add("offline");
+        engineStatusText.textContent = "Connecting to Backend...";
+      }
+    }
+
+    setInterval(checkHealth, 5000);
+    checkHealth();
+
+    (function () {
+      const saved = localStorage.getItem('zaor_theme') || 'dark';
+      changeTheme(saved);
+    })();
+
+    let isRecording = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    const micBtn = document.getElementById('btn-mic');
+    const recordingBar = document.getElementById('recording-bar');
+    const recordingHint = document.getElementById('recording-hint');
+
+    function toggleRecording() {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    }
+
+    async function startRecording() {
+      if (sendBtn.disabled) {
+        showToast('⏳ Please wait for the current response to finish.', true);
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            sampleRate: 16000,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+
+        const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+          ? 'audio/webm;codecs=opus'
+          : 'audio/webm';
+        mediaRecorder = new MediaRecorder(stream, { mimeType });
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = event => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = async () => {
+          const stopBtn = document.getElementById('btn-stop-mic');
+          const recLabel = document.getElementById('rec-status-label');
+
+          if (!mediaRecorder.cancelTranscription) {
+            if (recLabel) recLabel.innerText = "Transcribing...";
+            if (recordingHint) recordingHint.innerText = "Converting speech to text...";
+            if (stopBtn) stopBtn.disabled = true;
+
+            const audioBlob = new Blob(audioChunks, { type: mimeType });
+            await sendAudioBlob(audioBlob);
+          }
+
+          if (micBtn) micBtn.style.display = '';
+          if (stopBtn) {
+            stopBtn.style.display = 'none';
+            stopBtn.disabled = false;
+          }
+          if (recordingBar) recordingBar.style.display = 'none';
+          if (recLabel) recLabel.innerText = "Listening...";
+          if (recordingHint) recordingHint.innerText = "Speak clearly";
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+
+        if (micBtn) micBtn.style.display = 'none';
+        const stopBtn = document.getElementById('btn-stop-mic');
+        if (stopBtn) {
+          stopBtn.style.display = 'grid';
+          stopBtn.disabled = false;
+        }
+        if (recordingBar) recordingBar.style.display = 'flex';
+        showToast('🎤 Listening... Speak now');
+
+      } catch (err) {
+        console.error('Microphone error:', err);
+        showToast('❌ Microphone access denied or not found.', true);
+      }
+    }
+
+    function stopRecording(cancel = false) {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.cancelTranscription = cancel;
+        mediaRecorder.stop();
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      }
+      isRecording = false;
+      if (cancel) {
+        if (micBtn) micBtn.style.display = '';
+        const stopBtn = document.getElementById('btn-stop-mic');
+        if (stopBtn) {
+          stopBtn.style.display = 'none';
+          stopBtn.disabled = false;
+        }
+        if (recordingBar) recordingBar.style.display = 'none';
+      }
+    }
+
+    async function sendAudioBlob(blob) {
+      try {
+        const formData = new FormData();
+        const ext = blob.type.includes("wav") ? "wav" : blob.type.includes("mp4") ? "mp4" : "webm";
+        formData.append("file", blob, `recording.${ext}`);
+
+        const res = await fetch(`${BACKEND}/transcribe`, {
+          method: "POST",
+          body: formData
+        });
+
+        if (res.ok) {
+          const d = await res.json();
+          if (d.transcription) {
+            const input = document.getElementById('user-input');
+            const currentVal = input.value.trim();
+            input.value = currentVal ? currentVal + " " + d.transcription : d.transcription;
+            input.value += " ";
+            input.dispatchEvent(new Event('input'));
+          } else if (d.error) {
+            showToast('❌ ' + d.error, true);
+          }
+        } else {
+          showToast("Voice transcription error", true);
+        }
+      } catch (err) {
+        showToast("Transcription failed: " + err.message, true);
+      }
+    }
+  </script>
+</body>
+
+</html>
